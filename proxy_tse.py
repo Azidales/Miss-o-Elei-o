@@ -9,7 +9,7 @@ Uso: python3 proxy_tse.py   (Python 3.8+, sem dependências)
 import http.server, pathlib, threading, time, urllib.error, urllib.parse, urllib.request, webbrowser
 
 PORTA = 8765
-HTML = pathlib.Path(__file__).with_name("apuracao-missao-2026.html")
+HTML = pathlib.Path(__file__).with_name("index.html")
 HOSTS = {"resultados.tse.jus.br", "resultados-sim.tse.jus.br"}
 MAX_REQ_POR_SEG = 10
 _trava, _ultima = threading.Lock(), [0.0]

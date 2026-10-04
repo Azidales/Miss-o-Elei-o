@@ -4,16 +4,27 @@ App de um único arquivo HTML que mostra, em ranking, a apuração do 1º turno 
 
 | Arquivo | O que é |
 |---|---|
-| `apuracao-missao-2026.html` | O app (HTML + CSS + JavaScript puro, sem dependências). Abra com duplo clique. |
+| `index.html` | O app (HTML + CSS + JavaScript puro, sem dependências). Abra com duplo clique ou pelo GitHub Pages. |
 | `proxy_tse.py` | Proxy local opcional (Python 3.8+, só biblioteca padrão), para quando o navegador bloquear o acesso direto ao TSE (CORS). |
 
 ## Uso normal
 
-Dê duplo clique em `apuracao-missao-2026.html`. O app lê a configuração do TSE, baixa os resultados e se atualiza sozinho (padrão de 60 s, ajustável em **Ajustes**).
+- **Online (GitHub Pages):** https://azidales.github.io/Miss-o-Elei-o/
+- **No PC:** dê duplo clique em `index.html`.
+
+O app lê a configuração do TSE, baixa os resultados e se atualiza sozinho (padrão de 60 s, ajustável em **Ajustes**). Cada navegador faz as próprias requisições ao TSE, então os limites de acesso valem por IP de quem está assistindo.
+
+## Publicar no GitHub Pages
+
+1. No repositório, abra **Settings** e, na barra lateral, clique em **Pages**.
+2. Em **Build and deployment**, escolha **Deploy from a branch**.
+3. Selecione o branch `claude/missao-2026-apuracao-app-u9eg0u` e a pasta `/ (root)`, e clique em **Save**.
+
+O site fica em `https://azidales.github.io/Miss-o-Elei-o/`. O arquivo `.nojekyll` faz o GitHub publicar os arquivos como estão, sem processamento.
 
 ## Se aparecer o aviso "Não foi possível ler os arquivos do TSE" (CORS)
 
-1. Coloque `proxy_tse.py` na mesma pasta de `apuracao-missao-2026.html`.
+1. Coloque `proxy_tse.py` e `index.html` na mesma pasta do seu computador.
 2. Abra o terminal nessa pasta e rode `python proxy_tse.py` (macOS/Linux: `python3 proxy_tse.py`).
 3. Acesse `http://localhost:8765` (o navegador abre sozinho) e deixe o terminal aberto. Para encerrar, use Ctrl+C.
 

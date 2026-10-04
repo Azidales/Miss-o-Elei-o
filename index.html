@@ -500,7 +500,7 @@ function loadImage(img, url) {
   });
 }
 async function detectProxy() {
-  if (!/^https?:$/.test(location.protocol)) return false;
+  if (!/^https?:$/.test(location.protocol) || !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) return false;
   try {
     const r = await fetch('/proxy?ping=1', { cache: 'no-store' });
     return r.ok && (await r.text()).trim() === 'ok';
@@ -1035,9 +1035,12 @@ function renderSummary(list) {
 function renderNotice(list) {
   const n = els.notice, parts = [];
   if (S.fatal === 'cors') {
+    const online = /^https?:$/.test(location.protocol);
     parts.push(`<div class="notice warn" role="alert"><h3>Não foi possível ler os arquivos do TSE</h3>
-      <p>O navegador bloqueou o acesso direto (provável restrição de CORS ao abrir o HTML como arquivo local) ou não há conexão com a internet. Use o proxy local que acompanha o app:</p>
-      <ol><li>Coloque <code>proxy_tse.py</code> na mesma pasta deste arquivo (<code>apuracao-missao-2026.html</code>).</li>
+      <p>O navegador bloqueou o acesso direto aos arquivos do TSE (provável restrição de CORS) ou não há conexão com a internet. Use o proxy local que acompanha o app:</p>
+      <ol><li>${online
+        ? 'Baixe <a href="index.html" download>index.html</a> e <a href="proxy_tse.py" download>proxy_tse.py</a> para uma mesma pasta do seu computador.'
+        : 'Coloque <code>proxy_tse.py</code> na mesma pasta deste arquivo (<code>index.html</code>).'}</li>
       <li>Abra o terminal nessa pasta e rode <code>python proxy_tse.py</code> (macOS/Linux: <code>python3 proxy_tse.py</code>).</li>
       <li>Acesse <code>http://localhost:8765</code> no navegador e mantenha o terminal aberto.</li></ol></div>`);
   } else if (S.fatal && S.fatal.startsWith('config:')) {
