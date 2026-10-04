@@ -16,11 +16,12 @@ O app lê a configuração do TSE, baixa os resultados e se atualiza sozinho (pa
 
 ## Publicar no GitHub Pages
 
-1. No repositório, abra **Settings** e, na barra lateral, clique em **Pages**.
-2. Em **Build and deployment**, escolha **Deploy from a branch**.
-3. Selecione o branch `claude/missao-2026-apuracao-app-u9eg0u` e a pasta `/ (root)`, e clique em **Save**.
+Em **Settings → Pages → Build and deployment → Source**, qualquer uma das duas opções funciona:
 
-O site fica em `https://azidales.github.io/Miss-o-Elei-o/`. O arquivo `.nojekyll` faz o GitHub publicar os arquivos como estão, sem processamento.
+- **GitHub Actions:** o workflow `.github/workflows/pages.yml` publica o site a cada push no branch `claude/missao-2026-apuracao-app-u9eg0u`. Também dá para rodá-lo manualmente na aba **Actions**.
+- **Deploy from a branch:** selecione o branch `claude/missao-2026-apuracao-app-u9eg0u` e a pasta `/ (root)`, e clique em **Save**. Nesse modo o workflow é pulado, e o arquivo `.nojekyll` faz o GitHub publicar os arquivos como estão.
+
+O site fica em `https://azidales.github.io/Miss-o-Elei-o/`.
 
 ## Se aparecer o aviso "Não foi possível ler os arquivos do TSE" (CORS)
 

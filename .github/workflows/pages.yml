@@ -1,0 +1,49 @@
+# Publica o app no GitHub Pages a cada push no branch padrão.
+# Só publica quando o Pages está configurado com a origem "GitHub Actions";
+# se a origem for "Deploy from a branch", o próprio GitHub publica e este job é pulado.
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches: [claude/missao-2026-apuracao-app-u9eg0u]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  origem:
+    runs-on: ubuntu-latest
+    outputs:
+      tipo: ${{ steps.pages.outputs.tipo }}
+    steps:
+      - name: Ler a origem configurada no Pages
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tipo=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type || echo workflow)
+          echo "Origem do Pages: $tipo"
+          echo "tipo=$tipo" >> "$GITHUB_OUTPUT"
+
+  publicar:
+    needs: origem
+    if: needs.origem.outputs.tipo == 'workflow'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - id: deployment
+        uses: actions/deploy-pages@v5
