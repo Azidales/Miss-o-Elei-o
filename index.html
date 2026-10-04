@@ -85,6 +85,10 @@ code{font:13px/1.4 ui-monospace,"SF Mono",Menlo,Consolas,monospace;background:va
 .ring-val{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .tb-title{flex:1;min-width:0}
 .tb-title strong{display:block;font-size:17px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.party-pick{position:relative;display:inline-flex;max-width:100%}
+.party-pick::after{content:"";position:absolute;right:12px;top:50%;width:7px;height:7px;margin-top:-6px;border:solid var(--label-g2);border-width:0 1.8px 1.8px 0;transform:rotate(45deg);pointer-events:none}
+.party-select{-webkit-appearance:none;appearance:none;max-width:100%;height:32px;margin:0 0 0 -10px;padding:0 32px 0 10px;border:0;border-radius:var(--r-seg);background:transparent;font-size:17px;font-weight:600;letter-spacing:-.01em;text-overflow:ellipsis;cursor:pointer;transition:background .2s}
+.party-select:hover{background:var(--fill)}
 .tb-title>span{display:block;font-size:12px;color:var(--label-g2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tb-title .sub-short{display:none}
 .sub-short svg{vertical-align:-1px;margin-right:4px}
@@ -155,6 +159,13 @@ section+section{margin-top:28px}
 .s-apuracao{color:var(--orange);background:var(--orange-bg)}
 .s-nao{color:var(--gray);background:var(--gray-bg)}
 .d-eleito{background:var(--green)} .d-segundo{background:var(--blue)} .d-apuracao{background:var(--orange)} .d-nao{background:var(--gray)}
+.proj{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;border-radius:11px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:inset 0 0 0 1.5px currentColor;cursor:help}
+.proj::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-eleito{color:var(--green)} .p-segundo{color:var(--blue)} .p-incerto{color:var(--orange)} .p-derrota{color:var(--red)}
+.proj-sum{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin:-12px 4px 26px;font-size:13px;color:var(--label-2)}
+.proj-sum b{color:var(--label);font-weight:600;font-variant-numeric:tabular-nums}
+.proj-sum i{display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;vertical-align:0}
+.proj-sum .pi-eleito{background:var(--green)} .proj-sum .pi-segundo{background:var(--blue)} .proj-sum .pi-incerto{background:var(--orange)} .proj-sum .pi-derrota{background:var(--red)}
 .tag{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;font-size:12px;font-weight:500;color:var(--label-2);box-shadow:inset 0 0 0 1px var(--sep)}
 
 /* destaques e últimas posições */
@@ -220,7 +231,7 @@ dialog::backdrop{background:rgba(0,0,0,.32)}
 }
 @media (max-width:760px){
   .summary{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .tb-time,.tb-suffix,.tb-title .sub-long{display:none}
+  .tb-time,.tb-title .sub-long{display:none}
   .tb-title .sub-short{display:block}
   .field-select{flex:1 1 40%}
   .select{max-width:none;width:100%}
@@ -266,7 +277,7 @@ dialog::backdrop{background:rgba(0,0,0,.32)}
       <span class="ring-val" id="ringVal" aria-hidden="true">–</span>
     </div>
     <div class="tb-title">
-      <strong><span id="tbTitle">Apuração 2026</span><span class="tb-suffix"> · Apuração</span></strong>
+      <label class="party-pick"><span class="sr">Partido</span><select id="selParty" class="party-select" title="Escolher partido"></select></label>
       <span class="sub-long" id="tbSub">Carregando configuração…</span>
       <span class="sub-short"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="sr">Atualizado às </span><b class="num" id="tbTimeShort">--:--:--</b></span>
     </div>
@@ -280,7 +291,7 @@ dialog::backdrop{background:rgba(0,0,0,.32)}
     </button>
   </header>
 
-  <nav class="toolbar glass" aria-label="Ordenação e filtros">
+  <nav class="toolbar glass" id="toolbar" aria-label="Ordenação e filtros">
     <div class="seg seg-crit" role="radiogroup" aria-label="Critério do ranking">
       <input type="radio" name="crit" id="c-pct" value="pct"><label for="c-pct"><span class="lg">% de votos</span><span class="sm" aria-hidden="true">%</span></label>
       <input type="radio" name="crit" id="c-status" value="status"><label for="c-status">Situação</label>
@@ -301,6 +312,7 @@ dialog::backdrop{background:rgba(0,0,0,.32)}
 
   <div id="notice"></div>
   <section class="summary" id="summary" aria-label="Resumo do filtro atual"></section>
+  <p class="proj-sum" id="projSum" hidden></p>
 
   <section id="secTop" aria-labelledby="hTop" hidden>
     <h2 class="sec-h" id="hTop">Destaques</h2>
@@ -342,13 +354,6 @@ dialog::backdrop{background:rgba(0,0,0,.32)}
         <input id="inInterval" type="number" min="20" max="900" step="5" inputmode="numeric" required>
         <small>Padrão de 60 s: escolha do autor do app, não recomendação do TSE. Mínimo de 20 s.</small>
       </label>
-      <label>Número do partido no ambiente Oficial
-        <input id="inPartyOf" type="text" inputmode="numeric" pattern="[0-9]{2}" maxlength="2" required>
-      </label>
-      <label>Número do partido no ambiente Simulado
-        <input id="inPartySim" type="text" inputmode="numeric" pattern="[0-9]{2}" maxlength="2" required>
-        <small>O simulado do TSE não tem o partido 14; use um número que exista nele.</small>
-      </label>
     </div>
     <dl class="info" id="dlgInfo"></dl>
     <div class="dlg-actions">
@@ -381,6 +386,13 @@ const BLOCK_MS = 11 * 60 * 1000;      // TSE: bloqueio de 10 min ao exceder o li
 const SKIP_404_CYCLES = 5;            // arquivo com 404 fica de fora por alguns ciclos
 const MAX_404_PER_CYCLE = 5;          // 404s repetidos podem bloquear o IP: interrompe o ciclo
 const PAGE = 100;
+/* Projeção: o que aconteceria se a apuração terminasse agora (estimativa, não resultado oficial). */
+const PROJ = {
+  eleito:  { order: 0, label: 'Rumo à eleição' },
+  segundo: { order: 1, label: 'Rumo ao 2º turno' },
+  incerto: { order: 2, label: 'Vaga incerta' },
+  derrota: { order: 3, label: 'Rumo à derrota' }
+};
 const STATUS = {
   eleito:   { order: 0, label: 'Eleito' },
   segundo:  { order: 1, label: '2º turno' },
@@ -426,16 +438,24 @@ const S = {
   interval: Math.max(20, int(store.get('interval', 60)) || 60),
   crit: ['pct', 'status', 'pos', 'votes'].includes(store.get('crit')) ? store.get('crit') : 'pct',
   fCargo: 'all', fUf: 'all', q: '', visible: PAGE,
-  viaProxy: false, gen: 0,
+  viaProxy: false, gen: 0, running: false, nextAt: 0, timer: 0,
+  blockedUntil: 0, blockedStatus: 0, reqCount: 0  // bloqueio vale para o IP inteiro, nos dois ambientes
+};
+/* Cada ambiente (Oficial/Simulado) guarda os próprios dados: trocar de aba não baixa tudo de novo. */
+const newModeState = () => ({
   cfg: null,
-  files: new Map(),    // url -> { f, meta, rows, agrVag }
+  files: new Map(),    // url -> { f, meta, rows, agrVag, agrVotes }
   derived: new Map(),  // url -> candidatos do partido nesse arquivo
   sig: new Map(),      // "ele:uf" -> assinatura do -ab.json já processada
   stale: new Map(), skip: new Map(), ab: new Map(),
-  cands: [], arrowBase: null, pendingBase: null, baseTaken: false, firstDone: false, sg: '',
-  running: false, cycleNo: 0, lastStart: 0, lastOk: 0, lastChange: 0, nextAt: 0, timer: 0,
-  blockedUntil: 0, blockedStatus: 0, progress: { done: 0, total: 0 }, errors: [], fatal: null, reqCount: 0
-};
+  parties: new Map(),  // número -> sigla, de todos os partidos vistos nos arquivos
+  cards: new Map(),    // id do candidato -> cartão (mantém fotos já carregadas)
+  cands: [], arrowBase: null, pendingBase: null, baseTaken: false, firstDone: false,
+  cycleNo: 0, lastStart: 0, lastOk: 0, lastChange: 0,
+  progress: { done: 0, total: 0 }, errors: [], fatal: null
+});
+const MS = { oficial: newModeState(), simulado: newModeState() };
+let M = MS[S.mode];
 const partyNow = () => S.party[S.mode];
 
 /* =====================================================================
@@ -575,7 +595,7 @@ function buildGroups(cfg) {
    ===================================================================== */
 function abSigUf(ab, uf) {
   const e = (ab.abr || []).find(a => String(a.cdabr).toLowerCase() === uf);
-  return e ? `${e.dt} ${e.ht} ${e.s?.st} ${e.and}` : 'na' + Math.floor(S.cycleNo / 5);
+  return e ? `${e.dt} ${e.ht} ${e.s?.st} ${e.and}` : 'na' + Math.floor(M.cycleNo / 5);
 }
 const abSigAll = ab => (ab.abr || []).map(a => `${a.cdabr}:${a.dt} ${a.ht} ${a.s?.st} ${a.and}`).join('|');
 function indexAb(ab) { const m = new Map(); for (const a of ab.abr || []) m.set(String(a.cdabr).toLowerCase(), a); return m; }
@@ -585,7 +605,7 @@ function noteError(url, e) {
   const why = e instanceof HttpError ? 'HTTP ' + e.status
     : e instanceof TypeError ? 'falha de rede/CORS'
     : e && e.name === 'AbortError' ? 'tempo esgotado' : (e && e.message) || 'erro';
-  S.errors.push({ file, why });
+  M.errors.push({ file, why });
 }
 
 async function cycle() {
@@ -593,59 +613,59 @@ async function cycle() {
   clearTimeout(S.timer);
   if (Date.now() < S.blockedUntil) { scheduleNext(); updateStatus(); return; }
   const gen = S.gen;
-  S.running = true; S.cycleNo++; S.lastStart = Date.now(); S.errors = [];
-  S.pendingBase = S.cands; S.baseTaken = false;
-  S.progress = { done: 0, total: 0 };
+  S.running = true; M.cycleNo++; M.lastStart = Date.now(); M.errors = [];
+  M.pendingBase = M.cands; M.baseTaken = false;
+  M.progress = { done: 0, total: 0 };
   updateStatus();
   try {
-    if (!S.cfg) {
-      try { S.cfg = await loadConfig(); }
+    if (!M.cfg) {
+      try { M.cfg = await loadConfig(); }
       catch (e) {
         if (gen !== S.gen) return;
-        if (e instanceof TypeError && !S.viaProxy) S.fatal = 'cors';
-        else S.fatal = 'config:' + (e instanceof HttpError ? 'HTTP ' + e.status : e.message);
+        if (e instanceof TypeError && !S.viaProxy) M.fatal = 'cors';
+        else M.fatal = 'config:' + (e instanceof HttpError ? 'HTTP ' + e.status : e.message);
         throw e;
       }
       if (gen !== S.gen) return;
-      S.fatal = null;
+      M.fatal = null;
       buildFilters(); renderHeader();
     }
     // 1) acompanhamento
     const abs = new Map();
-    for (const el of S.cfg.elections) {
-      const url = `${S.cfg.dir('ab', el.cd, 'br')}/br-e${pad(el.cd, 6)}-ab.json`;
+    for (const el of M.cfg.elections) {
+      const url = `${M.cfg.dir('ab', el.cd, 'br')}/br-e${pad(el.cd, 6)}-ab.json`;
       try {
         const j = await getJSON(url);
         if (gen !== S.gen) return;
-        abs.set(el.cd, j); S.ab.set(el.cd, indexAb(j)); S.fatal = null;
+        abs.set(el.cd, j); M.ab.set(el.cd, indexAb(j)); M.fatal = null;
       } catch (e) {
         if (gen !== S.gen) return;
         if (Date.now() < S.blockedUntil) throw e;
-        if (e instanceof TypeError && !S.viaProxy && !S.files.size) S.fatal = 'cors';
+        if (e instanceof TypeError && !S.viaProxy && !M.files.size) M.fatal = 'cors';
         noteError(url, e);
       }
     }
     renderHeader();
     // 2) decide o que baixar
     const todo = [];
-    for (const g of S.cfg.groups) {
+    for (const g of M.cfg.groups) {
       const ab = abs.get(g.ele);
       if (!ab) continue; // sem -ab.json não sabemos se mudou: espera o próximo ciclo
       g.curSig = g.uf === 'br' ? abSigAll(ab) : abSigUf(ab, g.uf);
-      const missing = g.files.some(f => !S.files.has(f.url) && !(S.skip.get(f.url) > S.cycleNo));
-      if (S.sig.get(g.key) === g.curSig && !missing) continue;
+      const missing = g.files.some(f => !M.files.has(f.url) && !(M.skip.get(f.url) > M.cycleNo));
+      if (M.sig.get(g.key) === g.curSig && !missing) continue;
       todo.push(g);
     }
-    S.progress.total = todo.reduce((n, g) => n + g.files.length, 0);
+    M.progress.total = todo.reduce((n, g) => n + g.files.length, 0);
     updateStatus();
     // 3) resultados
     let n404 = 0;
     for (const g of todo) {
-      if (n404 >= MAX_404_PER_CYCLE) { S.errors.push({ file: 'ciclo', why: `${n404} respostas 404: downloads suspensos neste ciclo` }); break; }
+      if (n404 >= MAX_404_PER_CYCLE) { M.errors.push({ file: 'ciclo', why: `${n404} respostas 404: downloads suspensos neste ciclo` }); break; }
       let ok = true, stale = false;
-      const abEntry = S.ab.get(g.ele)?.get(g.uf);
+      const abEntry = M.ab.get(g.ele)?.get(g.uf);
       for (const f of g.files) {
-        if (S.skip.get(f.url) > S.cycleNo || n404 >= MAX_404_PER_CYCLE) { ok = false; S.progress.done++; continue; }
+        if (M.skip.get(f.url) > M.cycleNo || n404 >= MAX_404_PER_CYCLE) { ok = false; M.progress.done++; continue; }
         try {
           const j = await getJSON(f.url);
           if (gen !== S.gen) return;
@@ -656,20 +676,20 @@ async function cycle() {
           if (gen !== S.gen) return;
           if (Date.now() < S.blockedUntil) throw e;
           ok = false; noteError(f.url, e);
-          if (e instanceof HttpError && e.status === 404) { n404++; S.skip.set(f.url, S.cycleNo + SKIP_404_CYCLES); }
+          if (e instanceof HttpError && e.status === 404) { n404++; M.skip.set(f.url, M.cycleNo + SKIP_404_CYCLES); }
         }
-        S.progress.done++; updateStatus();
+        M.progress.done++; updateStatus();
       }
-      const n = S.stale.get(g.key) || 0;
-      if (ok && (!stale || n >= 2)) { S.sig.set(g.key, g.curSig); S.stale.delete(g.key); }
-      else if (stale) S.stale.set(g.key, n + 1);
+      const n = M.stale.get(g.key) || 0;
+      if (ok && (!stale || n >= 2)) { M.sig.set(g.key, g.curSig); M.stale.delete(g.key); }
+      else if (stale) M.stale.set(g.key, n + 1);
     }
-    if (abs.size) S.lastOk = Date.now();
-    if (!S.firstDone) S.firstDone = true;
-    if (S.baseTaken) announce(`Dados atualizados às ${clock(S.lastChange)}.`);
+    if (abs.size) M.lastOk = Date.now();
+    if (!M.firstDone) M.firstDone = true;
+    if (M.baseTaken) announce(`Dados atualizados às ${clock(M.lastChange)}.`);
   } catch (e) {
     if (gen !== S.gen) return;
-    if (!(e instanceof HttpError) && !(e instanceof BlockedError) && !S.fatal) noteError('ciclo', e);
+    if (!(e instanceof HttpError) && !(e instanceof BlockedError) && !M.fatal) noteError('ciclo', e);
   } finally {
     if (gen === S.gen) {
       S.running = false;
@@ -679,7 +699,7 @@ async function cycle() {
 }
 function scheduleNext() {
   clearTimeout(S.timer);
-  let at = Math.max(S.lastStart + S.interval * 1000, Date.now() + 3000);
+  let at = Math.max(M.lastStart + S.interval * 1000, Date.now() + 3000);
   if (Date.now() < S.blockedUntil) at = Math.max(at, S.blockedUntil + 1000);
   S.nextAt = at;
   S.timer = setTimeout(cycle, at - Date.now());
@@ -689,7 +709,7 @@ function scheduleNext() {
    Leitura do -u.json (EA20) e cálculo das métricas
    ===================================================================== */
 function ingest(f, j) {
-  const prev = S.files.get(f.url);
+  const prev = M.files.get(f.url);
   if (prev && j.idg && prev.meta.idg === j.idg) return false; // idg é único por arquivo gerado
   const carg = (j.carg || [])[0] || {};
   const rows = [], agrVag = new Map();
@@ -703,17 +723,21 @@ function ingest(f, j) {
     });
   }
   rows.sort((x, y) => y.vap - x.vap || x.seq - y.seq);
-  const leg = new Map();
-  for (const r of rows) { const k = (leg.get(r.agr) || 0) + 1; leg.set(r.agr, k); r.legPos = k; }
+  const agrVotes = new Map(); // legenda -> votos dos seus candidatos, em ordem decrescente
+  for (const r of rows) {
+    if (!agrVotes.has(r.agr)) agrVotes.set(r.agr, []);
+    const v = agrVotes.get(r.agr); v.push(r.vap); r.legPos = v.length;
+    if (!M.parties.has(r.party) && r.sg) M.parties.set(r.party, r.sg);
+  }
   const meta = {
     idg: j.idg, cargoNome: carg.nmn || f.cargo.ds, nv: int(carg.nv) || 1,
     tf: j.tf, and: j.and, md: j.md, dv: j.dv, esae: j.esae,
     pst: dec(j.s?.pstn ?? j.s?.pst), pstTxt: j.s?.pst || '0,00', st: int(j.s?.st),
-    anyVotes: rows.some(r => r.vap > 0)
+    vv: int(j.v?.vv), anyVotes: rows.some(r => r.vap > 0)
   };
-  const rec = { f, meta, rows, agrVag };
-  S.files.set(f.url, rec);
-  S.derived.set(f.url, derive(rec));
+  const rec = { f, meta, rows, agrVag, agrVotes };
+  M.files.set(f.url, rec);
+  M.derived.set(f.url, derive(rec));
   return true;
 }
 
@@ -733,16 +757,45 @@ function situation(r, meta, pos, twoRound) {
   return ['apuracao', 'Em apuração'];
 }
 
+/* Quociente eleitoral: votos válidos ÷ vagas, fração > 0,5 arredonda para cima (Código Eleitoral, art. 106). */
+const quociente = (vv, nv) => { if (!vv || !nv) return 0; const x = vv / nv, f = Math.floor(x); return x - f > 0.5 ? f + 1 : f; };
+function project(r, pos, rows, rec, maj, twoRound, cutoff) {
+  const { meta, agrVag, agrVotes } = rec;
+  if (norm(r.dvt) === 'anulado') return ['derrota', 'votos anulados'];
+  if (maj && twoRound) {
+    const vv = meta.vv || rows.filter(x => norm(x.dvt).startsWith('valido')).reduce((a, x) => a + x.vap, 0);
+    if (!vv) return null;
+    const share = r.vap / vv * 100, lead = rows[0].vap / vv * 100;
+    const txt = `${fmtPct.format(share)}% dos votos válidos`;
+    if (pos === 1) return share > 50 ? ['eleito', `${txt}, mais da metade`] : ['segundo', `${txt}, sem maioria absoluta`];
+    if (pos === 2) return lead > 50 ? ['derrota', `o 1º tem ${fmtPct.format(lead)}% dos válidos`] : ['segundo', txt];
+    return ['derrota', txt];
+  }
+  if (maj) return pos <= cutoff ? ['eleito', ''] : ['derrota', ''];
+  // Proporcional: vagas que o TSE atribui hoje à legenda ("vag") e a ordem do candidato nela.
+  if (!agrVag.has(r.agr)) return null;
+  const vag = agrVag.get(r.agr), votes = agrVotes.get(r.agr) || [];
+  const quem = r.agrTp === 'f' ? 'da federação' : 'do partido';
+  if (vag === 0) return ['derrota', r.agrTp === 'f' ? 'a federação ainda não tem vaga' : 'o partido ainda não tem vaga'];
+  const vagas = vag === 1 ? `da única vaga ${quem}` : `das ${vag} vagas ${quem}`;
+  if (r.legPos <= vag) {
+    const qe = quociente(meta.vv, meta.nv);
+    if (qe && r.vap < qe * 0.1) return ['incerto', `dentro ${vagas}, mas abaixo de 10% do quociente eleitoral`];
+    const nx = votes[vag];
+    return ['eleito', `dentro ${vagas}` + (nx != null ? ` · +${fmtInt.format(r.vap - nx)} sobre o 1º de fora` : '')];
+  }
+  return ['derrota', `fora ${vagas} · −${fmtInt.format(votes[vag - 1] - r.vap)} para a última vaga`];
+}
+
 function derive(rec) {
   const { f, meta, rows, agrVag } = rec;
   const party = partyNow(), out = [];
   const maj = f.cargo.tp === '1';
   const twoRound = maj && TWO_ROUND.has(f.cargo.cd);
   const cutoff = maj ? (twoRound ? 2 : meta.nv) : 0;
-  const ftDir = S.cfg && S.cfg.dirs.ft ? S.cfg.dir('ft', f.ele, f.uf) : '';
+  const ftDir = M.cfg && M.cfg.dirs.ft ? M.cfg.dir('ft', f.ele, f.uf) : '';
   rows.forEach((r, i) => {
     if (r.party !== party) return;
-    if (!S.sg && r.sg) S.sg = r.sg;
     const pos = meta.anyVotes ? i + 1 : null;
     const c = {
       id: `${f.ele}-${f.cargo.cd}-${f.uf}-${r.sq}`, sq: r.sq, ele: f.ele, uf: f.uf,
@@ -765,35 +818,43 @@ function derive(rec) {
     }
     if (!maj) {
       const fed = r.agrTp === 'f' ? 'federação' : 'partido';
-      c.legTxt = `${r.legPos}º no ${fed}` + (agrVag.has(r.agr) ? ` · ${agrVag.get(r.agr)} vaga(s) da legenda${meta.tf === 's' ? '' : ' até agora'}` : '');
+      c.legTxt = `${r.legPos}º no ${fed}` + (agrVag.has(r.agr) ? ` · ${agrVag.get(r.agr)} ${agrVag.get(r.agr) === 1 ? 'vaga' : 'vagas'} da legenda${meta.tf === 's' ? '' : ' até agora'}` : '');
     }
     const [k, label] = situation(r, meta, pos, twoRound);
     c.status = k; c.statusLabel = label;
+    c.proj = null; c.projWhy = '';
+    if (k === 'apuracao' && pos && meta.dv !== 'n') {
+      const pr = project(r, pos, rows, rec, maj, twoRound, cutoff);
+      if (pr) { c.proj = pr[0]; c.projWhy = pr[1]; }
+    }
+    if (!maj && c.projWhy) c.legTxt = `${r.legPos}º ${r.agrTp === 'f' ? 'na federação' : 'no partido'} · ${c.projWhy}`;
+    else if (maj && twoRound && c.projWhy) c.cutTxt = [c.projWhy, c.cutTxt].filter(Boolean).join(' · ');
     out.push(c);
   });
   return out;
 }
-const rebuild = () => { S.cands = [].concat(...S.derived.values()); };
+const rebuild = () => { M.cands = [].concat(...M.derived.values()); };
 function onDataChanged() {
-  if (!S.baseTaken) { S.arrowBase = S.firstDone ? S.pendingBase : null; S.baseTaken = true; }
+  if (!M.baseTaken) { M.arrowBase = M.firstDone ? M.pendingBase : null; M.baseTaken = true; }
   rebuild();
-  S.lastChange = Date.now();
+  M.lastChange = Date.now();
   scheduleRender();
 }
 function rederiveAll() {
-  S.sg = ''; S.derived.clear();
-  for (const [url, rec] of S.files) S.derived.set(url, derive(rec));
-  rebuild(); S.arrowBase = null;
+  M.derived.clear();
+  for (const [url, rec] of M.files) M.derived.set(url, derive(rec));
+  rebuild(); M.arrowBase = null;
   dropCards(); render();
 }
 
 /* =====================================================================
    Ranking
    ===================================================================== */
+const sitKey = c => STATUS[c.status].order * 10 + (c.status === 'apuracao' ? (c.proj ? PROJ[c.proj].order : 5) : 0);
 const tie = (a, b) => a.nome.localeCompare(b.nome, 'pt-BR') || (a.id < b.id ? -1 : 1);
 const CMP = {
   pct:    (a, b) => b.pvap - a.pvap || b.vap - a.vap || tie(a, b),
-  status: (a, b) => STATUS[a.status].order - STATUS[b.status].order || b.pvap - a.pvap || tie(a, b),
+  status: (a, b) => sitKey(a) - sitKey(b) || b.pvap - a.pvap || tie(a, b),
   pos:    (a, b) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || b.pvap - a.pvap || tie(a, b),
   votes:  (a, b) => b.vap - a.vap || b.pvap - a.pvap || tie(a, b)
 };
@@ -813,7 +874,6 @@ const els = {
   podium: $('podium'), list: $('list'), low: $('low'), secTop: $('secTop'), ranking: $('ranking'), secLow: $('secLow'),
   more: $('btnMore'), summary: $('summary'), notice: $('notice'), fCargo: $('fCargo'), fUf: $('fUf'), fQ: $('fQ')
 };
-const cardMap = new Map();
 let renderQueued = false, lastRender = 0;
 function scheduleRender() {
   if (renderQueued) return;
@@ -824,9 +884,9 @@ function scheduleRender() {
 function render() {
   lastRender = performance.now();
   renderHeader();
-  const list = ranked(S.cands);
+  const list = ranked(M.cands);
   let baseRanks = null;
-  if (S.arrowBase) { baseRanks = new Map(); ranked(S.arrowBase).forEach((c, i) => baseRanks.set(c.id, i + 1)); }
+  if (M.arrowBase) { baseRanks = new Map(); ranked(M.arrowBase).forEach((c, i) => baseRanks.set(c.id, i + 1)); }
   renderCounts(); renderSummary(list); renderNotice(list);
   const N = list.length;
   const top = list.slice(0, 3);
@@ -879,7 +939,7 @@ function flip(mutate) {
 }
 function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function cardFor(c) {
-  let el = cardMap.get(c.id);
+  let el = M.cards.get(c.id);
   if (el) return el;
   el = h('li', 'card'); el._new = true;
   const rank = h('div', 'rank'); el._rank = h('span', 'rank-n'); el._delta = h('span', 'delta'); el._deltaSr = h('span', 'sr');
@@ -888,15 +948,15 @@ function cardFor(c) {
   el._ini = h('span', null, c.ini); el._img = h('img'); el._img.alt = ''; el._img.decoding = 'async';
   av.append(el._ini, el._img);
   const head = h('div', 'head'); const row1 = h('div', 'row1');
-  el._name = h('h3', 'name'); el._badge = h('span', 'badge'); el._tag = h('span', 'tag'); el._tag.hidden = true;
-  row1.append(el._name, el._badge, el._tag);
+  el._name = h('h3', 'name'); el._badge = h('span', 'badge'); el._proj = h('span', 'proj'); el._tag = h('span', 'tag'); el._tag.hidden = true;
+  row1.append(el._name, el._badge, el._proj, el._tag);
   el._sub = h('p', 'sub'); head.append(row1, el._sub);
   const nums = h('div', 'nums'); el._pct = h('strong', 'pct'); el._votes = h('span', 'votes'); nums.append(el._pct, el._votes);
   const det = h('div', 'detail'); const bar = h('div', 'bar'); el._bar = h('span'); bar.append(el._bar); bar.setAttribute('aria-hidden', 'true');
   el._meta = h('p', 'meta'); det.append(bar, el._meta);
   el.append(rank, av, head, nums, det);
   el._av = av; el._foto = c.foto;
-  cardMap.set(c.id, el);
+  M.cards.set(c.id, el);
   if (c.foto) photoObserver.observe(av);
   return el;
 }
@@ -912,6 +972,11 @@ function fillCard(el, c, rank, baseRanks) {
   } else { el._delta.textContent = ''; el._delta.className = 'delta'; el._deltaSr.textContent = ''; }
   el._name.textContent = c.nome; el._name.title = c.nomeCompleto || c.nomeUrna;
   el._badge.textContent = c.statusLabel; el._badge.className = 'badge s-' + c.status;
+  el._proj.hidden = !c.proj;
+  if (c.proj) {
+    el._proj.textContent = PROJ[c.proj].label; el._proj.className = 'proj p-' + c.proj;
+    el._proj.title = `Projeção se a apuração terminasse agora (${c.pstTxt}% das seções). Não é resultado oficial.`;
+  }
   const anulado = c.dvt && norm(c.dvt) !== 'valido';
   el._tag.hidden = !anulado; if (anulado) el._tag.textContent = c.dvt;
   el._sub.textContent = `${c.cargoNome} · ${c.ufLabel} · nº ${c.numero} · ${c.pstTxt}% das seções`;
@@ -943,8 +1008,8 @@ function tween(node, from, to, fmt) {
   node._raf = requestAnimationFrame(step);
 }
 function dropCards() {
-  for (const el of cardMap.values()) { photoObserver.unobserve(el._av); el.remove(); }
-  cardMap.clear();
+  for (const el of M.cards.values()) { photoObserver.unobserve(el._av); el.remove(); }
+  M.cards.clear();
 }
 
 /* Fotos: <base>/<ambiente>/<ciclo>/<eleição>/fotos/<uf>/<sqcand>.jpeg (dir "ft" do ele-c.json).
@@ -967,20 +1032,19 @@ const photoObserver = new IntersectionObserver(entries => {
 
 function renderHeader() {
   const mode = MODES[S.mode], party = partyNow();
-  const sg = S.sg ? niceName(S.sg) : 'Partido';
-  $('tbTitle').textContent = `${sg} ${party}`;
-  const pill = S.mode === 'simulado' ? ' · Simulado' : '';
-  $('tbSub').textContent = S.cfg ? `1º turno · ${S.cfg.dt} · ${mode.label}${S.viaProxy ? ' · via proxy local' : ''}` : `Ambiente ${mode.label} · carregando configuração…`;
+  const sg = M.parties.has(party) ? niceSigla(M.parties.get(party)) : 'Partido';
+  renderPartyPicker();
+  $('tbSub').textContent = M.cfg ? `1º turno · ${M.cfg.dt} · ${mode.label}${S.viaProxy ? ' · via proxy local' : ''}` : `Ambiente ${mode.label} · carregando configuração…`;
   $('heroTitle').textContent = `${sg} ${party}`;
   if (S.mode === 'simulado') { const p = h('span', 'pill', 'Simulado'); $('heroTitle').append(p); }
-  $('heroSub').textContent = `Ranking de todos os candidatos do partido nº ${party} nas Eleições Gerais${S.cfg ? ' · 1º turno · ' + S.cfg.dt : ''}.`;
-  $('tbTime').textContent = $('tbTimeShort').textContent = S.lastOk ? clock(S.lastOk) : '--:--:--';
+  $('heroSub').textContent = `Ranking de todos os candidatos do partido nº ${party} nas Eleições Gerais${M.cfg ? ' · 1º turno · ' + M.cfg.dt : ''}.`;
+  $('tbTime').textContent = $('tbTimeShort').textContent = M.lastOk ? clock(M.lastOk) : '--:--:--';
   // anel: % de seções totalizadas (UF filtrada ou Brasil)
   let entry = null, where = 'Brasil';
-  if (S.cfg) {
-    const fed = S.cfg.elections.find(e => e.tp === '8'), est = S.cfg.elections.find(e => e.tp === '1');
-    if (S.fUf !== 'all' && S.fUf !== 'br') { where = S.fUf.toUpperCase(); entry = (est && S.ab.get(est.cd)?.get(S.fUf)) || (fed && S.ab.get(fed.cd)?.get(S.fUf)); }
-    else entry = (fed && S.ab.get(fed.cd)?.get('br')) || (est && S.ab.get(est.cd)?.get('br'));
+  if (M.cfg) {
+    const fed = M.cfg.elections.find(e => e.tp === '8'), est = M.cfg.elections.find(e => e.tp === '1');
+    if (S.fUf !== 'all' && S.fUf !== 'br') { where = S.fUf.toUpperCase(); entry = (est && M.ab.get(est.cd)?.get(S.fUf)) || (fed && M.ab.get(fed.cd)?.get(S.fUf)); }
+    else entry = (fed && M.ab.get(fed.cd)?.get('br')) || (est && M.ab.get(est.cd)?.get('br'));
   }
   const pst = entry ? dec(entry.s?.pstn ?? entry.s?.pst) : null;
   const C = 2 * Math.PI * 18, prog = $('ringProg');
@@ -994,21 +1058,21 @@ function renderHeader() {
 function buildFilters() {
   const fc = els.fCargo, fu = els.fUf;
   fc.replaceChildren(new Option('Todos os cargos', 'all'));
-  for (const c of S.cfg.cargos) fc.append(new Option(c.ds, c.cd));
+  for (const c of M.cfg.cargos) fc.append(new Option(c.ds, c.cd));
   fu.replaceChildren(new Option('Todas as UFs', 'all'), new Option('Brasil (Presidente)', 'br'));
   for (const u of UFS) fu.append(new Option(`${u.toUpperCase()} · ${UF_NOME[u]}`, u));
   if (![...fc.options].some(o => o.value === S.fCargo)) S.fCargo = 'all';
   fc.value = S.fCargo; fu.value = S.fUf;
 }
 function renderCounts() {
-  if (!S.cfg) return;
+  if (!M.cfg) return;
   const byCargo = new Map(), byUf = new Map();
-  for (const c of view(S.cands, 'cargo')) byCargo.set(c.cargo, (byCargo.get(c.cargo) || 0) + 1);
-  for (const c of view(S.cands, 'uf')) byUf.set(c.uf, (byUf.get(c.uf) || 0) + 1);
+  for (const c of view(M.cands, 'cargo')) byCargo.set(c.cargo, (byCargo.get(c.cargo) || 0) + 1);
+  for (const c of view(M.cands, 'uf')) byUf.set(c.uf, (byUf.get(c.uf) || 0) + 1);
   const tot = m => [...m.values()].reduce((a, b) => a + b, 0);
   for (const o of els.fCargo.options) {
     const n = o.value === 'all' ? tot(byCargo) : byCargo.get(o.value) || 0;
-    const base = o.value === 'all' ? 'Todos os cargos' : S.cfg.cargos.find(c => c.cd === o.value)?.ds || o.value;
+    const base = o.value === 'all' ? 'Todos os cargos' : M.cfg.cargos.find(c => c.cd === o.value)?.ds || o.value;
     const t = `${base} (${fmtInt.format(n)})`; if (o.text !== t) o.text = t;
   }
   for (const o of els.fUf.options) {
@@ -1016,6 +1080,28 @@ function renderCounts() {
     const base = o.value === 'all' ? 'Todas as UFs' : o.value === 'br' ? 'Brasil (Presidente)' : `${o.value.toUpperCase()} · ${UF_NOME[o.value]}`;
     const t = `${base} (${fmtInt.format(n)})`; if (o.text !== t) o.text = t;
   }
+}
+/* Siglas: mantém acrônimos (PT, PSDB, NOVO) e só ajusta palavras longas (MISSÃO -> Missão). */
+function niceSigla(s) {
+  const t = String(s || '').replace(/\*+$/, '').trim();
+  return /[a-z]/.test(t) || t.length < 5 || !/[AEIOUÁÉÍÓÚÂÊÔÃÕ]/.test(t) ? t : niceName(t);
+}
+function renderPartyPicker() {
+  const sel = $('selParty'), party = partyNow();
+  const list = new Map(M.parties);
+  if (!list.has(party)) list.set(party, '');
+  const nums = [...list.keys()].sort((a, b) => a - b);
+  const key = nums.map(n => n + list.get(n)).join('|');
+  if (sel._key !== key) {
+    sel._key = key;
+    sel.replaceChildren(...nums.map(n => new Option(list.get(n) ? `${niceSigla(list.get(n))} ${n}` : `Partido ${n}`, n)));
+  }
+  if (sel.value !== party) sel.value = party;
+  // largura do controle = texto do partido escolhido (a lista nativa usaria o nome mais longo)
+  const cs = getComputedStyle(sel), ctx = renderPartyPicker.ctx || (renderPartyPicker.ctx = document.createElement('canvas').getContext('2d'));
+  ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const text = sel.selectedOptions[0] ? sel.selectedOptions[0].text : '';
+  sel.style.width = Math.ceil(ctx.measureText(text).width + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 12) + 'px';
 }
 function renderSummary(list) {
   const cnt = { eleito: 0, segundo: 0, apuracao: 0, nao: 0 };
@@ -1031,10 +1117,24 @@ function renderSummary(list) {
     if (k) s.append(h('i', 'd-' + k));
     s.append(document.createTextNode(fmtInt.format(n)));
   });
+  // projeção dos que ainda estão em apuração
+  const pc = { eleito: 0, segundo: 0, incerto: 0, derrota: 0 };
+  let any = 0;
+  for (const c of list) if (c.proj) { pc[c.proj]++; any++; }
+  const ps = $('projSum');
+  ps.hidden = !any;
+  if (any) {
+    const items = Object.keys(PROJ).filter(k => pc[k] || k !== 'incerto').map(k => {
+      const sp = h('span'); sp.append(h('i', 'pi-' + k), h('b', null, fmtInt.format(pc[k])), document.createTextNode(' ' + PROJ[k].label.toLowerCase()));
+      return sp;
+    });
+    ps.replaceChildren(h('span', null, 'Se a apuração terminasse agora:'), ...items);
+    ps.title = 'Projeção com os votos já totalizados. Deputados: vagas que o TSE atribui hoje à legenda e a ordem do candidato nela. Não é resultado oficial.';
+  }
 }
 function renderNotice(list) {
   const n = els.notice, parts = [];
-  if (S.fatal === 'cors') {
+  if (M.fatal === 'cors') {
     const online = /^https?:$/.test(location.protocol);
     parts.push(`<div class="notice warn" role="alert"><h3>Não foi possível ler os arquivos do TSE</h3>
       <p>O navegador bloqueou o acesso direto aos arquivos do TSE (provável restrição de CORS) ou não há conexão com a internet. Use o proxy local que acompanha o app:</p>
@@ -1043,21 +1143,21 @@ function renderNotice(list) {
         : 'Coloque <code>proxy_tse.py</code> na mesma pasta deste arquivo (<code>index.html</code>).'}</li>
       <li>Abra o terminal nessa pasta e rode <code>python proxy_tse.py</code> (macOS/Linux: <code>python3 proxy_tse.py</code>).</li>
       <li>Acesse <code>http://localhost:8765</code> no navegador e mantenha o terminal aberto.</li></ol></div>`);
-  } else if (S.fatal && S.fatal.startsWith('config:')) {
-    const d = document.createElement('div'); d.textContent = S.fatal.slice(7);
+  } else if (M.fatal && M.fatal.startsWith('config:')) {
+    const d = document.createElement('div'); d.textContent = M.fatal.slice(7);
     parts.push(`<div class="notice warn" role="alert"><h3>Não foi possível ler a configuração das eleições</h3><p>Arquivo ele-c.json: ${d.innerHTML}. Nova tentativa no próximo ciclo.</p></div>`);
   }
   if (S.blockedUntil > Date.now()) {
     parts.push(`<div class="notice warn" role="status"><h3>Acesso pausado</h3><p>O TSE respondeu HTTP ${S.blockedStatus}, sinal de limite de acesso. O app ficará sem fazer requisições até ${clock(S.blockedUntil)}, porque novas tentativas renovam o bloqueio.</p></div>`);
   }
-  const pres = [...S.files.values()].find(r => r.f.cargo.cd === '1');
+  const pres = [...M.files.values()].find(r => r.f.cargo.cd === '1');
   if (pres && pres.meta.dv === 'n') parts.push('<div class="notice info"><h3>Votação para Presidente ainda não liberada</h3><p>O TSE só divulga os votos de Presidente após o fim da votação em todo o país (atributo dv = n). Os números aparecem automaticamente quando liberados.</p></div>');
-  if (!S.cands.length && S.files.size && !S.running) {
-    parts.push(`<div class="notice info"><h3>Nenhum candidato do partido nº ${partyNow()} nos arquivos lidos</h3><p>${S.mode === 'simulado' ? 'O simulado do TSE não tem o partido 14. Ajuste o número do partido do simulado em Ajustes.' : 'Confira o número do partido em Ajustes.'}</p></div>`);
-  } else if (S.cands.length && !list.length) {
+  if (!M.cands.length && M.files.size && !S.running) {
+    parts.push(`<div class="notice info"><h3>Nenhum candidato do partido nº ${partyNow()} nos arquivos lidos</h3><p>${S.mode === 'simulado' ? 'O simulado do TSE não tem o partido 14. ' : ''}Escolha outro partido no seletor do topo.</p></div>`);
+  } else if (M.cands.length && !list.length) {
     parts.push('<div class="notice info"><h3>Nenhum candidato neste filtro</h3><p>Altere o cargo, a UF ou a busca.</p></div>');
   }
-  if (!S.cands.length && !S.files.size && !S.fatal) parts.push('<div class="skel"></div><div class="skel" style="margin-top:10px"></div><div class="skel" style="margin-top:10px"></div>');
+  if (!M.cands.length && !M.files.size && !M.fatal) parts.push('<div class="skel"></div><div class="skel" style="margin-top:10px"></div><div class="skel" style="margin-top:10px"></div>');
   const html = parts.join('');
   if (n._html !== html) { n._html = html; n.innerHTML = html; }
 }
@@ -1070,25 +1170,25 @@ function updateStatus() {
   if (Date.now() < S.blockedUntil) { t = BLOCK_TXT(); cls = 'err'; }
   else if (S.running) {
     cls = 'busy';
-    t = !S.cfg ? 'Lendo a configuração das eleições…'
-      : S.progress.total ? `Atualizando · ${S.progress.done} de ${S.progress.total} arquivo(s)`
+    t = !M.cfg ? 'Lendo a configuração das eleições…'
+      : M.progress.total ? `Atualizando · ${M.progress.done} de ${M.progress.total} arquivo(s)`
       : 'Verificando o andamento da totalização…';
-  } else if (S.fatal) { t = 'Sem acesso aos dados · nova tentativa em ' + secsLeft() + ' s'; cls = 'err'; }
+  } else if (M.fatal) { t = 'Sem acesso aos dados · nova tentativa em ' + secsLeft() + ' s'; cls = 'err'; }
   else {
     t = `Próxima atualização em ${secsLeft()} s`;
-    if (S.lastChange) t += ` · última mudança às ${clock(S.lastChange)}`;
-    else if (S.lastOk) t += ' · sem mudanças';
+    if (M.lastChange) t += ` · última mudança às ${clock(M.lastChange)}`;
+    else if (M.lastOk) t += ' · sem mudanças';
   }
   if (txt.textContent !== t) txt.textContent = t;
   dot.className = 'dot' + (cls ? ' ' + cls : '');
-  const errs = S.errors.filter(e => e.file !== 'ciclo'), notes = S.errors.filter(e => e.file === 'ciclo');
-  warn.hidden = !S.errors.length;
-  if (S.errors.length) {
+  const errs = M.errors.filter(e => e.file !== 'ciclo'), notes = M.errors.filter(e => e.file === 'ciclo');
+  warn.hidden = !M.errors.length;
+  if (M.errors.length) {
     const parts = [];
     if (errs.length) parts.push(`${errs.length} arquivo(s) com erro (${[...new Set(errs.map(e => e.why))].join(', ')})`);
     for (const n of notes) parts.push(n.why);
     $('sbWarnText').textContent = parts.join(' · ') + ' · nova tentativa no próximo ciclo';
-    warn.title = S.errors.map(e => `${e.file}: ${e.why}`).join('\n');
+    warn.title = M.errors.map(e => `${e.file}: ${e.why}`).join('\n');
   }
   $('btnRefresh').disabled = S.running || Date.now() < S.blockedUntil;
 }
@@ -1098,14 +1198,16 @@ function announce(msg) { const l = $('live'); l.textContent = ''; setTimeout(() 
 /* =====================================================================
    Interação
    ===================================================================== */
-function resetMode() {
+/* Troca de ambiente: mostra na hora o que já foi baixado daquele ambiente e só busca o que mudou. */
+function switchMode(mode) {
   S.gen++; Net.clear(); clearTimeout(S.timer);
-  Object.assign(S, { running: false, cfg: null, cands: [], arrowBase: null, pendingBase: null, firstDone: false,
-    sg: '', fatal: null, errors: [], lastOk: 0, lastChange: 0, fCargo: 'all', fUf: 'all', visible: PAGE });
-  for (const k of ['files', 'derived', 'sig', 'stale', 'skip', 'ab']) S[k].clear();
-  els.fCargo.replaceChildren(new Option('Todos os cargos', 'all'));
-  els.fUf.replaceChildren(new Option('Todas as UFs', 'all'));
-  dropCards(); render(); cycle();
+  S.running = false; S.mode = mode; S.visible = PAGE; store.set('mode', mode);
+  M = MS[mode];
+  if (M.cfg) buildFilters();
+  else { els.fCargo.replaceChildren(new Option('Todos os cargos', 'all')); els.fUf.replaceChildren(new Option('Todas as UFs', 'all')); }
+  render();
+  // Verificação imediata só custa os -ab.json; os -u.json vêm apenas das UFs que mudaram.
+  if (!M.lastStart || Date.now() - M.lastStart > 15000) cycle(); else scheduleNext();
 }
 function bind() {
   els.fCargo.replaceChildren(new Option('Todos os cargos', 'all'));
@@ -1116,8 +1218,14 @@ function bind() {
   }
   for (const r of document.querySelectorAll('input[name=mode]')) {
     r.checked = r.value === S.mode;
-    r.addEventListener('change', () => { if (r.checked && r.value !== S.mode) { S.mode = r.value; store.set('mode', S.mode); resetMode(); } });
+    r.addEventListener('change', () => { if (r.checked && r.value !== S.mode) switchMode(r.value); });
   }
+  $('selParty').addEventListener('change', e => {
+    const n = e.target.value;
+    if (n === partyNow()) return;
+    S.party = { ...S.party, [S.mode]: n }; store.set('party', S.party);
+    S.visible = PAGE; rederiveAll(); // sem nova requisição: os arquivos já estão em memória
+  });
   els.fCargo.addEventListener('change', () => { S.fCargo = els.fCargo.value; S.visible = PAGE; render(); });
   els.fUf.addEventListener('change', () => { S.fUf = els.fUf.value; S.visible = PAGE; render(); });
   let qt;
@@ -1126,12 +1234,12 @@ function bind() {
   $('btnRefresh').addEventListener('click', () => { if (!S.running && Date.now() >= S.blockedUntil) cycle(); });
   const dlg = $('dlg');
   $('btnSettings').addEventListener('click', () => {
-    $('inInterval').value = S.interval; $('inPartyOf').value = S.party.oficial; $('inPartySim').value = S.party.simulado;
+    $('inInterval').value = S.interval;
     const info = [['Ambiente', `${MODES[S.mode].label} (${MODES[S.mode].amb})`], ['Base', MODES[S.mode].base], ['Conexão', S.viaProxy ? 'proxy local (localhost)' : 'direta ao TSE']];
-    if (S.cfg) {
-      info.push(['Ciclo', S.cfg.ciclo], ['Pleito', `${S.cfg.pleito} · ${S.cfg.dt}`]);
-      for (const e of S.cfg.elections) info.push([`Eleição ${e.cd}`, `${e.nm} · cargos ${e.cargos.map(c => c.cd).join(', ')}`]);
-      info.push(['Arquivos monitorados', fmtInt.format(S.cfg.groups.reduce((n, g) => n + g.files.length, 0)) + ' -u.json + ' + S.cfg.elections.length + ' -ab.json']);
+    if (M.cfg) {
+      info.push(['Ciclo', M.cfg.ciclo], ['Pleito', `${M.cfg.pleito} · ${M.cfg.dt}`]);
+      for (const e of M.cfg.elections) info.push([`Eleição ${e.cd}`, `${e.nm} · cargos ${e.cargos.map(c => c.cd).join(', ')}`]);
+      info.push(['Arquivos monitorados', fmtInt.format(M.cfg.groups.reduce((n, g) => n + g.files.length, 0)) + ' -u.json + ' + M.cfg.elections.length + ' -ab.json']);
     }
     info.push(['Requisições nesta sessão', fmtInt.format(S.reqCount)]);
     $('dlgInfo').replaceChildren(...info.flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)]));
@@ -1141,14 +1249,13 @@ function bind() {
   dlg.addEventListener('close', () => {
     if (dlg.returnValue !== 'save') return;
     const iv = Math.min(900, Math.max(20, int($('inInterval').value) || 60));
-    const po = ($('inPartyOf').value.match(/\d{2}/) || [S.party.oficial])[0];
-    const ps = ($('inPartySim').value.match(/\d{2}/) || [S.party.simulado])[0];
-    const partyChanged = po !== S.party.oficial || ps !== S.party.simulado;
-    S.interval = iv; S.party = { oficial: po, simulado: ps };
-    store.set('interval', iv); store.set('party', S.party);
+    S.interval = iv; store.set('interval', iv);
     if (!S.running) scheduleNext();
-    if (partyChanged) rederiveAll(); else render();
+    render();
   });
+  const narrow = matchMedia('(max-width: 760px)'), seg = document.querySelector('.seg-mode');
+  const placeMode = () => { if (narrow.matches) $('toolbar').append(seg); else document.querySelector('.tb-time').before(seg); };
+  narrow.addEventListener('change', placeMode); placeMode();
   const top = document.querySelector('.topbar');
   const ro = new ResizeObserver(() => {
     const st = document.documentElement.style;

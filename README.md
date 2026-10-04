@@ -40,11 +40,21 @@ O proxy só aceita URLs `https` de `resultados.tse.jus.br` e `resultados-sim.tse
 - Em caso de erro HTTP, o app não repete na hora: espera o próximo ciclo e mostra um aviso na barra de status. Se receber HTTP 429 ou 403, para todas as requisições por 11 minutos. Um arquivo que dá 404 fica de fora por 5 ciclos, e depois de 5 respostas 404 o ciclo é interrompido.
 - Fotos: `<base>/<ambiente>/<ciclo>/<eleição>/fotos/<uf>/<sqcand>.jpeg`. Cada foto só é baixada quando o cartão aparece na tela, e passa pela mesma fila das outras requisições. Se a foto falhar, o cartão mostra as iniciais.
 
+## Partido, ambientes e projeção
+
+- **Partido:** escolha pelo seletor no título da barra superior. A lista sai dos arquivos já baixados, então trocar de partido não faz nenhuma requisição nova. O padrão é 14 no Oficial e 57 no Simulado.
+- **Oficial / Simulado:** cada ambiente guarda os próprios dados. Ao voltar para um ambiente, a tela aparece na hora e só os `-ab.json` são consultados; os `-u.json` vêm apenas das UFs que mudaram.
+- **Projeção** ("Rumo à eleição", "Rumo ao 2º turno", "Vaga incerta", "Rumo à derrota"): mostra o que aconteceria se a apuração terminasse agora. É uma estimativa feita pelo app, não um resultado do TSE, e só aparece enquanto a situação oficial do candidato não sai.
+  - Presidente e Governador: o 1º colocado com mais da metade dos votos válidos fica "rumo à eleição"; sem maioria, os dois primeiros ficam "rumo ao 2º turno".
+  - Senador: quem está dentro do número de vagas (`nv`) fica "rumo à eleição".
+  - Deputados: usa o número de vagas que o TSE atribui hoje à legenda (campo `vag`) e a posição do candidato dentro dela. Se ele estiver dentro dessas vagas mas abaixo de 10% do quociente eleitoral (Código Eleitoral, arts. 106 e 108), aparece "vaga incerta", porque a sobra de vagas segue regras próprias (art. 109).
+
 ## Ranking
 
 - Critérios: % de votos (`pvap`), Situação, Posição na disputa e Votos absolutos (`vap`).
 - A posição na disputa é calculada com todos os candidatos do mesmo arquivo (mesmo cargo e UF), em ordem de votos. Os empates são resolvidos pelo `seq` do TSE.
 - Nos cargos majoritários, o card mostra a diferença para a última vaga que elege ou que leva ao 2º turno. Em Presidente e Governador, essa vaga é o 2º lugar. Em Senador, é a posição igual ao número de vagas (`nv`), que em 2026 é 2.
-- O ambiente Simulado usa `https://resultados-sim.tse.jus.br/simulado` com o ambiente `simulado2026`. Como lá não existe o partido 14, o número padrão é 57, que tem candidatos em 2º turno, eleitos e suplentes. Dá para trocar o número em **Ajustes**.
+- No critério "Situação", entre os candidatos ainda em apuração, a projeção define a ordem: rumo à eleição, rumo ao 2º turno, vaga incerta, rumo à derrota.
+- O ambiente Simulado usa `https://resultados-sim.tse.jus.br/simulado` com o ambiente `simulado2026`. Como lá não existe o partido 14, o número padrão é 57, que tem candidatos em 2º turno, eleitos e suplentes.
 
 Dados oficiais do TSE. App independente, sem vínculo com a Justiça Eleitoral.
